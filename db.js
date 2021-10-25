@@ -1,6 +1,7 @@
 // contains the sequelize data models and seeding code
 const Sequelize = require('sequelize');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const { STRING } = Sequelize;
 const config = {
   logging: false
@@ -40,11 +41,11 @@ User.authenticate = async({ username, password })=> {
   const user = await User.findOne({
     where: {
       username,
-      password
     }
   });
-  if(user){
-    return user.id;
+  const match = await bcrypt.compare(password, user.password);
+  if(match){
+    return user;
   }
   const error = Error('bad credentials');
   error.status = 401;
@@ -67,6 +68,8 @@ const syncAndSeed = async()=> {
     { username: 'moe', password: 'moe_pw'},
     { username: 'larry', password: 'larry_pw'}
   ];
+  credentials.map(user => { user.password = bcrypt.hashSync(user.password, saltRounds = 10);
+  })
   const [lucy, moe, larry] = await Promise.all(
     credentials.map( credential => User.create(credential))
   );
@@ -78,6 +81,19 @@ const syncAndSeed = async()=> {
     }
   };
 };
+
+// const hash = bcrypt.hashSync(myPlaintextPassword, saltRounds);
+// // Store hash in your password DB.
+
+
+// bcrypt.hash(yourPassword, saltRounds, (err, hash) => {
+//       try{
+//       const saltRounds = 10;
+//       const yourPassword = user.
+//       } catch (err){
+  
+//   }});
+
 
 module.exports = {
   syncAndSeed,
